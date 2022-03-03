@@ -1,4 +1,4 @@
-# Guide to WGS_WES_Pipeline
+# Guide to RNA_Pipeline
 
 - [Purpose](#purpose)
 - [How To Run](#how-to-run)

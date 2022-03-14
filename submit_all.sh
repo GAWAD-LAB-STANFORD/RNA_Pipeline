@@ -392,10 +392,10 @@ elif [ $STEP -eq 2 ]; then
     TEMP_FASTQ_STRING=$( IFS=$':'; echo "${TEMP_FASTQ_ARRAY[*]}" )
     echo -e "\nsbatch --mem=64G --parsable -e $STD_ERR_OUT_DIR/%A_%a_%x.err -o $STD_ERR_OUT_DIR/%A_%a_%x.out \
         --array=1-${TEMP_JOB_COUNT} ${SCRIPT_DIR}/2_align_reads.sh \
-        $RESULTS_DIR $REF_FASTA $TOOLS_DIR $TEMP_FASTQ_STRING $RNA\n" >> $PIPELINE_STATUS
+        $RESULTS_DIR $REF_FASTA $TOOLS_DIR $TEMP_FASTQ_STRING\n" >> $PIPELINE_STATUS
     DEPENDENCIES+=( $(sbatch --mem=64G --parsable -e $STD_ERR_OUT_DIR/%A_%a_%x.err -o $STD_ERR_OUT_DIR/%A_%a_%x.out \
         --array=1-${TEMP_JOB_COUNT} ${SCRIPT_DIR}/2_align_reads.sh \
-        $RESULTS_DIR $REF_FASTA $TOOLS_DIR $TEMP_FASTQ_STRING $RNA) )
+        $RESULTS_DIR $REF_FASTA $TOOLS_DIR $TEMP_FASTQ_STRING) )
     TEMP_ARRAY_START=$(($TEMP_ARRAY_START + $TEMP_ARRAY_INCREMENT))
     echo "New start: $TEMP_ARRAY_START"
     echo "Increment: $TEMP_ARRAY_INCREMENT"

@@ -9,18 +9,17 @@
 START_TIME=$(date +%s)
 RESULTS_DIR=$1
 GENOME_VERSION=$2
-TARGETED=$3
-SCRIPT_DIR=$4
-TOOLS_DIR=$5
-REFERENCE_DIR=$6
-SAMPLE_ARRAY=( $(echo $7 | sed 's/:/ /g') )
+SCRIPT_DIR=$3
+TOOLS_DIR=$4
+REFERENCE_DIR=$5
+SAMPLE_ARRAY=( $(echo $6 | sed 's/:/ /g') )
 SAMPLE=${SAMPLE_ARRAY[$(( $SLURM_ARRAY_TASK_ID - 1 ))]}
-DUP_MARK_AGAIN=$8
-DUPLICATE_PIXEL_DISTANCE=$9
-REMOVE_DUPS=${10}
-BAM_SUFFIX=${11}
-INTERVAL_LIST=${12}
-VARIANT_CLASS=${13}
+DUP_MARK_AGAIN=$7
+DUPLICATE_PIXEL_DISTANCE=$8
+REMOVE_DUPS=$9
+BAM_SUFFIX=${10}
+INTERVAL_LIST=${11}
+VARIANT_CLASS=${12}
 
 echo -e "START: $(date)\nRNA Pipeline\nSlurm ID: $SLURM_ARRAY_TASK_ID\nSample: $SAMPLE\nResults dir: $RESULTS_DIR\nTargets bed: $TARGETS_BED\nInterval list: $INTERVAL_LIST"
 cd $RESULTS_DIR
@@ -100,35 +99,36 @@ if [ $MAPQ_MIN -ne 0 ] && [ $RNA -eq 0 ]; then
 fi
 
 
-if [ $RNA -eq 1 ]; then
-    mv ${SAMPLE}.rg.bam ${SAMPLE}${BAM_SUFFIX}
-    
-    ml python/3.6.1
-    export PYTHONPATH=/home/groups/cgawad/python_libs/lib/python3.6/site-packages:$PYTHONPATH
-    export PATH=/home/groups/cgawad/python_libs/bin:$PATH
-    
-    htseq-count -m intersection-nonempty -i gene_id -r pos -s no ${SAMPLE}${BAM_SUFFIX} /oak/stanford/groups/cgawad/Reference_Files/GATK_Resource_Bundle_hg38/hg38.ensGene.gtf
-elif [ $DUPLICATE_PIXEL_DISTANCE -eq 0 ]; then
-    mv ${SAMPLE}.bqsr.bam ${SAMPLE}${BAM_SUFFIX}
-else
-    if [ $REMOVE_DUPS -eq 1 ]; then
-        REMOVE_DUPS="true"
-    else
-        REMOVE_DUPS="false"
-    fi
-    echo "### Marking Duplicates - START: $(date) ###"
-    # For OPTICAL_DUPLICATE_PIXEL_DISTANCE, 2500 is appropriate for patterned flow cells (e.g. NovaSeq, HiSeq). A value of 100 should be used for unpatterned flowcells (e.g. NextSeq, MiniSeq)
-    gatk --java-options "-XX:+UseParallelGC -XX:ParallelGCThreads=4 -Xmx63g" MarkDuplicates \
-        -I ${SAMPLE}.bqsr.bam -O ${SAMPLE}${BAM_SUFFIX} --METRICS_FILE ${SAMPLE}.duplication_metrics.tsv \
-        --VALIDATION_STRINGENCY SILENT --OPTICAL_DUPLICATE_PIXEL_DISTANCE $DUPLICATE_PIXEL_DISTANCE \
-        --ASSUME_SORT_ORDER coordinate --CLEAR_DT false --MAX_RECORDS_IN_RAM 1000 --ADD_PG_TAG_TO_READS false \
-        --REMOVE_DUPLICATES $REMOVE_DUPS
-    if [ ! -f ${SAMPLE}${BAM_SUFFIX} ]; then
-        echo "${SAMPLE}${BAM_SUFFIX} not found. Exiting with code 1"
-        exit 1
-    fi
-    echo "### Marking Duplicates - END: $(date) ###"
-fi
+mv ${SAMPLE}.rg.bam ${SAMPLE}${BAM_SUFFIX}
+
+ml python/3.6.1
+export PYTHONPATH=/home/groups/cgawad/python_libs/lib/python3.6/site-packages:$PYTHONPATH
+export PATH=/home/groups/cgawad/python_libs/bin:$PATH
+
+htseq-count -m intersection-nonempty -i gene_id -r pos -s no ${SAMPLE}${BAM_SUFFIX} /oak/stanford/groups/cgawad/Reference_Files/GATK_Resource_Bundle_hg38/gencode.v39.annotation.gtf
+# htseq-count -m intersection-nonempty -i gene_id -r pos -s no ${SAMPLE}${BAM_SUFFIX} /oak/stanford/groups/cgawad/Reference_Files/GATK_Resource_Bundle_hg38/gencode.v39.annotation.gff3
+
+# if [ $DUPLICATE_PIXEL_DISTANCE -eq 0 ]; then
+#     mv ${SAMPLE}.bqsr.bam ${SAMPLE}${BAM_SUFFIX}
+# else
+#     if [ $REMOVE_DUPS -eq 1 ]; then
+#         REMOVE_DUPS="true"
+#     else
+#         REMOVE_DUPS="false"
+#     fi
+#     echo "### Marking Duplicates - START: $(date) ###"
+#     # For OPTICAL_DUPLICATE_PIXEL_DISTANCE, 2500 is appropriate for patterned flow cells (e.g. NovaSeq, HiSeq). A value of 100 should be used for unpatterned flowcells (e.g. NextSeq, MiniSeq)
+#     gatk --java-options "-XX:+UseParallelGC -XX:ParallelGCThreads=4 -Xmx63g" MarkDuplicates \
+#         -I ${SAMPLE}.bqsr.bam -O ${SAMPLE}${BAM_SUFFIX} --METRICS_FILE ${SAMPLE}.duplication_metrics.tsv \
+#         --VALIDATION_STRINGENCY SILENT --OPTICAL_DUPLICATE_PIXEL_DISTANCE $DUPLICATE_PIXEL_DISTANCE \
+#         --ASSUME_SORT_ORDER coordinate --CLEAR_DT false --MAX_RECORDS_IN_RAM 1000 --ADD_PG_TAG_TO_READS false \
+#         --REMOVE_DUPLICATES $REMOVE_DUPS
+#     if [ ! -f ${SAMPLE}${BAM_SUFFIX} ]; then
+#         echo "${SAMPLE}${BAM_SUFFIX} not found. Exiting with code 1"
+#         exit 1
+#     fi
+#     echo "### Marking Duplicates - END: $(date) ###"
+# fi
 
 
 echo "### Indexing final BAM - START: $(date) ###"
@@ -148,17 +148,10 @@ fi
 
 
 echo "### Calculating QC metrics ### - START: $(date)"
-if [ $TARGETED -eq 1 ]; then
-    gatk --java-options "-XX:+UseParallelGC -XX:ParallelGCThreads=4 -Xmx63g" CollectHsMetrics \
-        -I ${SAMPLE}${BAM_SUFFIX} -O ${SAMPLE}.hs_metrics.tsv -R $REF_FASTA \
-        -BI $INTERVAL_LIST -TI $INTERVAL_LIST --VALIDATION_STRINGENCY LENIENT
-    echo "CollectHsMetrics done"
-else
-    gatk --java-options "-XX:+UseParallelGC -XX:ParallelGCThreads=4 -Xmx63g" CollectWgsMetrics \
-        -I ${SAMPLE}${BAM_SUFFIX} -O ${SAMPLE}.wgs_metrics.tsv \
-        -R $REF_FASTA --VALIDATION_STRINGENCY LENIENT --INTERVALS $INTERVAL_LIST
-    echo "CollectWgsMetrics done"
-fi
+gatk --java-options "-XX:+UseParallelGC -XX:ParallelGCThreads=4 -Xmx63g" CollectWgsMetrics \
+    -I ${SAMPLE}${BAM_SUFFIX} -O ${SAMPLE}.wgs_metrics.tsv \
+    -R $REF_FASTA --VALIDATION_STRINGENCY LENIENT --INTERVALS $INTERVAL_LIST
+echo "CollectWgsMetrics done"
 
 gatk --java-options "-XX:+UseParallelGC -XX:ParallelGCThreads=4 -Xmx63g" CollectMultipleMetrics \
     -I ${SAMPLE}${BAM_SUFFIX} -O ${SAMPLE}.multiple_metrics --INTERVALS $INTERVAL_LIST \

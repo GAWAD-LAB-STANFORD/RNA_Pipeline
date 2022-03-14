@@ -287,15 +287,6 @@ if [ $STEP -ne 0 ]; then
         echo "No fastq.gz files found in the fastq directory. Exiting with code 1" >> $PIPELINE_STATUS
         echo -e "END: $(date)" >> $PIPELINE_STATUS
         exit 1
-    elif [ "$CELL_BARCODES" != "0" ]; then
-        UNEXTRACTED_SAMPLE=${SAMPLE_ARRAY[0]}
-        if [ $STEP -eq 1 ]; then
-            echo -e "Starting fastq: $UNEXTRACTED_SAMPLE" >> $PIPELINE_STATUS
-        fi
-        SAMPLE_ARRAY=()
-        for (( c=1; c<=$NUMBER_OF_BARCODES; c++ )); do
-            SAMPLE_ARRAY+=( $(sed -n ${c}p $CELL_BARCODES | cut -f 1 | tr -d '[:blank:]') )
-        done
     fi
     if [ $STEP -eq 1 ]; then
         echo -e "Number of samples: ${#SAMPLE_ARRAY[@]}\nSamples: ${SAMPLE_ARRAY[@]}" >> $PIPELINE_STATUS

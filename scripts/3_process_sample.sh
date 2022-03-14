@@ -101,13 +101,13 @@ fi
 
 mv ${SAMPLE}.rg.bam ${SAMPLE}${BAM_SUFFIX}
 
-ml python/3.6.1
-export PYTHONPATH=/home/groups/cgawad/python_libs/lib/python3.6/site-packages:$PYTHONPATH
-export PATH=/home/groups/cgawad/python_libs/bin:$PATH
-
-htseq-count -m intersection-nonempty -i gene_id -r pos -s no ${SAMPLE}${BAM_SUFFIX} /oak/stanford/groups/cgawad/Reference_Files/GATK_Resource_Bundle_hg38/gencode.v39.annotation.gtf
+# ml python/3.6.1
+# export PYTHONPATH=/home/groups/cgawad/python_libs/lib/python3.6/site-packages:$PYTHONPATH
+# export PATH=/home/groups/cgawad/python_libs/bin:$PATH
+# 
+# htseq-count -m intersection-nonempty -i gene_id -r pos -s no ${SAMPLE}${BAM_SUFFIX} /oak/stanford/groups/cgawad/Reference_Files/GATK_Resource_Bundle_hg38/gencode.v39.annotation.gtf
 # htseq-count -m intersection-nonempty -i gene_id -r pos -s no ${SAMPLE}${BAM_SUFFIX} /oak/stanford/groups/cgawad/Reference_Files/GATK_Resource_Bundle_hg38/gencode.v39.annotation.gff3
-
+# 
 # if [ $DUPLICATE_PIXEL_DISTANCE -eq 0 ]; then
 #     mv ${SAMPLE}.bqsr.bam ${SAMPLE}${BAM_SUFFIX}
 # else

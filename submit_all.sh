@@ -21,9 +21,8 @@ Defaults: \n\t\
     R1_suffix: _L001_R1_001.fastq.gz or _R1_001.fastq.gz \n\t\
     R2_suffix: _L001_R2_001.fastq.gz or _R1_001.fastq.gz \n\t\
     dup_pixel_distance: 100 \n\t\
-    Bam suffix: .bqsr.marked.bam \n\t\t\
-        or .bqsr.unmarked.bam when running with --skip_dup_mark \n\t\t\
-        or customizable when running with --only_variant_call \n\n\
+    Bam suffix: .rna.bam \n\t\t\
+        or .rna.unmarked.bam when running with --skip_dup_mark \n\n\
 Run after demultiplexing: \n\t\
     sh ${PIPELINE_DIR}/submit_all.sh --fastq_dir /oak/stanford/groups/cgawad/MRD_project/ --project MRD_project \n\n\
 Run with demultiplexing: \n\t\
@@ -166,10 +165,6 @@ if [ ! -d $STD_ERR_OUT_DIR ]; then
     mkdir $STD_ERR_OUT_DIR
 fi
 OPTIONS=( "--err_out_dir $STD_ERR_OUT_DIR -f $FASTQ_DIR -r $RESULTS_DIR -d $PIPELINE_DIR -p $PROJECT" )
-if [ ! -z $RUN_DIR ] && [ $ONLY_VARIANT_CALL -eq 1 ]; then
-    echo "Variables not supplied correctly. Cannot perform demultiplexing while only calling variants. Exiting with code 1"
-    exit 1
-fi
 if [ ! -z $RUN_DIR ] && [ -z $SAMPLE_SHEET ]; then
     SAMPLE_SHEET="${RUN_DIR}/SampleSheet.csv"
 elif [ ! -z $SAMPLE_SHEET ]; then
@@ -276,7 +271,7 @@ if [ ! -z $SLURM_OPTIONS ]; then
 fi
 
 
-if [ $STEP -ne 0 ] && [ $ONLY_VARIANT_CALL -eq 0 ]; then
+if [ $STEP -ne 0 ]; then
     if [ -z $R1_SUFFIX ] || [ -z $R2_SUFFIX ]; then
         R1_SUFFIX="_L001_R1_001.fastq.gz"
         R2_SUFFIX="_L001_R2_001.fastq.gz"

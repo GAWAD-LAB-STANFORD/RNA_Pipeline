@@ -29,7 +29,8 @@ echo "START: $(date)"
 SPLIT_DIR="${RESULTS_DIR}/split_aligning_$SAMPLE"
 echo "Sample: $SAMPLE"
 
-
+R1_FASTQ="${FASTQ_DIR}/${SAMPLE}${R1_SUFFIX}"
+R2_FASTQ="${FASTQ_DIR}/${SAMPLE}${R2_SUFFIX}"
 echo "### Counting fastq read counts ### - START: $(date)"
 READ_COUNT=$(echo $(zcat $R1_FASTQ | wc -l ) \
     $(zcat $R2_FASTQ | wc -l) | awk '{ print ($1 + $2) / 4 }' )

@@ -437,11 +437,11 @@ elif [ $STEP -eq 3 ]; then
     TEMP_SAMPLES_STRING=$( IFS=$':'; echo "${TEMP_SAMPLE_ARRAY[*]}" )
     if [ $NOVASEQ_WGS -eq 1 ]; then
         echo -e "\nsbatch --parsable -e $STD_ERR_OUT_DIR/%A_%a_%x.err -o $STD_ERR_OUT_DIR/%A_%a_%x.out \
-            --array=1-${TEMP_JOB_COUNT} ${SCRIPT_DIR}/3_process_sample.sh --cpus-per-task=6 \
+            --array=1-${TEMP_JOB_COUNT} --cpus-per-task=6 ${SCRIPT_DIR}/3_process_sample.sh \
             $RESULTS_DIR $GENOME_VERSION $SCRIPT_DIR $TOOLS_DIR $REFERENCE_DIR $TEMP_SAMPLES_STRING $DUP_MARK_AGAIN \
             $DUPLICATE_PIXEL_DISTANCE $REMOVE_DUPS $BAM_SUFFIX $INTERVAL_LIST $VARIANT_CLASS\n" >> $PIPELINE_STATUS
         DEPENDENCIES+=( $(sbatch --parsable -e $STD_ERR_OUT_DIR/%A_%a_%x.err -o $STD_ERR_OUT_DIR/%A_%a_%x.out \
-            --array=1-${TEMP_JOB_COUNT} ${SCRIPT_DIR}/3_process_sample.sh --cpus-per-task=6 \
+            --array=1-${TEMP_JOB_COUNT} --cpus-per-task=6 ${SCRIPT_DIR}/3_process_sample.sh \
             $RESULTS_DIR $GENOME_VERSION $SCRIPT_DIR $TOOLS_DIR $REFERENCE_DIR $TEMP_SAMPLES_STRING $DUP_MARK_AGAIN \
             $DUPLICATE_PIXEL_DISTANCE $REMOVE_DUPS $BAM_SUFFIX $INTERVAL_LIST $VARIANT_CLASS) )
     elif [ $DUP_MARK_AGAIN -eq 1 ]; then
@@ -458,11 +458,11 @@ elif [ $STEP -eq 3 ]; then
             SAMPLE_COUNT=$((SAMPLE_COUNT+1))
         done
         echo -e "\nsbatch --parsable -e $STD_ERR_OUT_DIR/%A_%a_%x.err -o $STD_ERR_OUT_DIR/%A_%a_%x.out \
-            --array=${REPEAT_SAMPLES} ${SCRIPT_DIR}/3_process_sample.sh --cpus-per-task=6 \
+            --array=${REPEAT_SAMPLES} --cpus-per-task=6 ${SCRIPT_DIR}/3_process_sample.sh \
             $RESULTS_DIR $GENOME_VERSION $SCRIPT_DIR $TOOLS_DIR $REFERENCE_DIR $TEMP_SAMPLES_STRING $DUP_MARK_AGAIN \
             $DUPLICATE_PIXEL_DISTANCE $REMOVE_DUPS $BAM_SUFFIX $INTERVAL_LIST $VARIANT_CLASS\n" >> $PIPELINE_STATUS
         DEPENDENCIES+=( $(sbatch --parsable -e $STD_ERR_OUT_DIR/%A_%a_%x.err -o $STD_ERR_OUT_DIR/%A_%a_%x.out \
-            --array=${REPEAT_SAMPLES} ${SCRIPT_DIR}/3_process_sample.sh --cpus-per-task=6 \
+            --array=${REPEAT_SAMPLES} --cpus-per-task=6 ${SCRIPT_DIR}/3_process_sample.sh \
             $RESULTS_DIR $GENOME_VERSION $SCRIPT_DIR $TOOLS_DIR $REFERENCE_DIR $TEMP_SAMPLES_STRING $DUP_MARK_AGAIN \
             $DUPLICATE_PIXEL_DISTANCE $REMOVE_DUPS $BAM_SUFFIX $INTERVAL_LIST $VARIANT_CLASS) )
     else

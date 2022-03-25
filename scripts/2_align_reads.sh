@@ -30,7 +30,6 @@ echo "### Aligning fastqs - RNA data specified ### - START: $(date)"
 STAR --genomeDir \
     /oak/stanford/groups/cgawad/Reference_Files/GATK_Resource_Bundle_hg38/hg38_STAR_index/ \
     --readFilesIn ${SPLIT_DIR}/${R1_FASTQ} ${SPLIT_DIR}/${R2_FASTQ} \
-    --readFilesCommand zcat \
     --runThreadN 2 \
     --outFileNamePrefix ${SPLIT_DIR}/${ALIGNED_BAM} \
     --outSAMtype BAM SortedByCoordinate \

@@ -24,7 +24,7 @@ VARIANT_CLASS=${12}
 echo -e "START: $(date)\nRNA Pipeline\nSlurm ID: $SLURM_ARRAY_TASK_ID\nSample: $SAMPLE\nResults dir: $RESULTS_DIR\nTargets bed: $TARGETS_BED\nInterval list: $INTERVAL_LIST"
 cd $RESULTS_DIR
 
-ml R/4.0.2 java gsl biology samtools bedtools gatk bcftools
+ml R/4.2.0 java gsl biology samtools bedtools gatk bcftools
 export R_LIBS="/home/groups/cgawad/R_LIBS"
 
 # File and directory paths (reference files available in /oak/stanford/groups/cgawad/Reference_Files/)

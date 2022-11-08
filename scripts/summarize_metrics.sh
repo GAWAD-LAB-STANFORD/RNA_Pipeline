@@ -15,7 +15,7 @@ SAMPLE_SHEET=$5
 
 cd $RESULTS_DIR
 
-ml R/4.0.2 biology samtools
+ml R/4.2.0 biology samtools
 export R_LIBS="/home/groups/cgawad/R_LIBS"
 
 echo "### Summarizing metrics ### - START: $(date)"

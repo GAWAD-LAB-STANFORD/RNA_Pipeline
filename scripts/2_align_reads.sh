@@ -24,7 +24,7 @@ ALIGNED_BAM=$(echo $R1_FASTQ | sed "s/_R1_split_.*/_split_${SPLIT_NUM}.bam/")
 echo -e "START: $(date)\nRNA Pipeline\nSlurm ID: $SLURM_ARRAY_TASK_ID\nSplit dir: $SPLIT_DIR\nR1 fastq: $R1_FASTQ\nSplit num: $SPLIT_NUM\nSample: $SAMPLE\n"
 cd $RESULTS_DIR
 
-ml python/3.6.1 java 
+ml python/3.6.1 java/11.0.11 
 ml biology bwa samtools gatk star/2.5.4b
 echo "### Aligning fastqs - RNA data specified ### - START: $(date)"
 STAR --genomeDir \

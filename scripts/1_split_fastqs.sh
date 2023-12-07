@@ -8,7 +8,7 @@
 
 START_TIME=$(date +%s)
 FASTQ_DIR=$1
-RESULTS_DIR=$2
+SCRATCH_DIR=$2
 R1_SUFFIX=$3
 R2_SUFFIX=$4
 PYTHON_LIBS=$5
@@ -17,8 +17,8 @@ READS_PER_SPLIT=$7
 SAMPLE_ARRAY=( $(echo ${8} | sed 's/:/ /g') )
 SAMPLE=${SAMPLE_ARRAY[$(( $SLURM_ARRAY_TASK_ID - 1 ))]}
 
-echo -e "START: $(date)\nRNA Pipeline\nSlurm ID: $SLURM_ARRAY_TASK_ID\nFastq dir: $FASTQ_DIR\nResults dir: $RESULTS_DIR"
-cd $RESULTS_DIR
+echo -e "START: $(date)\nRNA Pipeline\nFastq dir: $FASTQ_DIR\nScratch dir: $SCRATCH_DIR"
+cd $SCRATCH_DIR
 
 ml python/3.6.1
 export PATH=${PYTHON_LIBS}:$PATH
@@ -26,7 +26,7 @@ export PYTHONPATH=${PYTHON_LIBS_SITE_PACKAGES}:$PYTHONPATH
 
 echo "START: $(date)"
 
-SPLIT_DIR="${RESULTS_DIR}/split_aligning_$SAMPLE"
+SPLIT_DIR="${SCRATCH_DIR}/split_aligning_$SAMPLE"
 echo "Sample: $SAMPLE"
 
 R1_FASTQ="${FASTQ_DIR}/${SAMPLE}${R1_SUFFIX}"

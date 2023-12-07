@@ -7,7 +7,7 @@
 #SBATCH --partition=cgawad
 
 START_TIME=$(date +%s)
-RESULTS_DIR=$1
+SCRATCH_DIR=$1
 REF_FASTA=$2
 TOOLS_DIR=$3
 FASTQ_ARRAY=( $(echo $4 | sed 's/:/ /g') )
@@ -21,8 +21,8 @@ SPLIT_NUM=$(echo $R1_FASTQ | sed "s/.*_R1_split_//" | sed "s/.fastq//")
 SAMPLE=$(echo $R1_FASTQ | sed "s/_R1_split_.*//")
 ALIGNED_BAM=$(echo $R1_FASTQ | sed "s/_R1_split_.*/_split_${SPLIT_NUM}.bam/")
 
-echo -e "START: $(date)\nRNA Pipeline\nSlurm ID: $SLURM_ARRAY_TASK_ID\nSplit dir: $SPLIT_DIR\nR1 fastq: $R1_FASTQ\nSplit num: $SPLIT_NUM\nSample: $SAMPLE\n"
-cd $RESULTS_DIR
+echo -e "START: $(date)\nRNA Pipeline\nSplit dir: $SPLIT_DIR\nR1 fastq: $R1_FASTQ\nSplit num: $SPLIT_NUM\nSample: $SAMPLE\n"
+cd $SCRATCH_DIR
 
 ml python/3.6.1 java/11.0.11 
 ml biology bwa samtools gatk star/2.5.4b

@@ -7,22 +7,18 @@
 #SBATCH --partition=cgawad
 
 START_TIME=$(date +%s)
-RESULTS_DIR=$1
-GENOME_VERSION=$2
-SCRIPT_DIR=$3
-TOOLS_DIR=$4
-REFERENCE_DIR=$5
-SAMPLE_ARRAY=( $(echo $6 | sed 's/:/ /g') )
+SCRATCH_DIR=$1
+SCRIPT_DIR=$2
+TOOLS_DIR=$3
+REFERENCE_DIR=$4
+SAMPLE_ARRAY=( $(echo $5 | sed 's/:/ /g') )
 SAMPLE=${SAMPLE_ARRAY[$(( $SLURM_ARRAY_TASK_ID - 1 ))]}
-DUP_MARK_AGAIN=$7
-DUPLICATE_PIXEL_DISTANCE=$8
-REMOVE_DUPS=$9
-BAM_SUFFIX=${10}
-INTERVAL_LIST=${11}
-VARIANT_CLASS=${12}
+BAM_SUFFIX=$6
+INTERVAL_LIST=$7
+VARIANT_CLASS=$8
 
-echo -e "START: $(date)\nRNA Pipeline\nSlurm ID: $SLURM_ARRAY_TASK_ID\nSample: $SAMPLE\nResults dir: $RESULTS_DIR\nTargets bed: $TARGETS_BED\nInterval list: $INTERVAL_LIST"
-cd $RESULTS_DIR
+echo -e "START: $(date)\nRNA Pipeline\nSample: $SAMPLE\nScratch dir: $SCRATCH_DIR\nTargets bed: $TARGETS_BED\nInterval list: $INTERVAL_LIST"
+cd $SCRATCH_DIR
 
 ml R/4.2.0 java/11.0.11 gsl biology samtools bedtools gatk bcftools
 export R_LIBS="/home/groups/cgawad/R_LIBS"
@@ -43,92 +39,37 @@ KNOWN_SITES_VCFS=(
     "${REFERENCE_DIR}/Homo_sapiens_assembly38.known_indels.vcf.gz"
 )
 
-# hg19 version b37 reference files
-if [ "$GENOME_VERSION" = "b37" ]; then
-    REF_FASTA="${REFERENCE_DIR}/human_g1k_v37.fasta"
-    REF_GENOME="${REFERENCE_DIR}/human_g1k_v37.genome"
-    N25CHR_BED="${REFERENCE_DIR}/human_g1k_v37_n25chr.bed"
-    KNOWN_SITES_VCFS=(
-        "${REFERENCE_DIR}/dbsnp_138.b37.vcf.gz"
-        "${REFERENCE_DIR}/Mills_and_1000G_gold_standard.indels.b37.vcf.gz"
-        "${REFERENCE_DIR}/1000G_phase1.indels.b37.vcf.gz"
-    )
+echo "### Combining BAMs ### - START: $(date)"
+BAM_FILENAMES=( $(ls split_aligning_${SAMPLE}/${SAMPLE}_split_[0-9]*.bam) )
+if [ ${#BAM_FILENAMES[@]} -eq 1 ]; then # A single bam entry, so no merging is occurring
+    mv ${BAM_FILENAMES[@]} ${SAMPLE}.bam
+else
+    samtools merge ${SAMPLE}.bam ${BAM_FILENAMES[@]}
 fi
-
-if [ $DUP_MARK_AGAIN -eq 0 ]; then
-    echo "### Combining BAMs ### - START: $(date)"
-    BAM_FILENAMES=( $(ls split_aligning_${SAMPLE}/${SAMPLE}_split_[0-9]*.bam) )
-    if [ ${#BAM_FILENAMES[@]} -eq 1 ]; then # A single bam entry, so no merging is occurring
-        mv ${BAM_FILENAMES[@]} ${SAMPLE}.bam
-    else
-        samtools merge ${SAMPLE}.bam ${BAM_FILENAMES[@]}
-    fi
-    samtools index ${SAMPLE}.bam
-    echo "### Combining BAMs ### - END: $(date)"
+samtools index ${SAMPLE}.bam
+echo "### Combining BAMs ### - END: $(date)"
 
 
-    echo "### BAM Read Group Replacement - START: $(date) ###"
-    gatk --java-options "-XX:+UseParallelGC -XX:ParallelGCThreads=4 -Xmx63g" AddOrReplaceReadGroups \
-        -I ${SAMPLE}.bam -O ${SAMPLE}.rg.bam --VALIDATION_STRINGENCY LENIENT \
-        -ID $SAMPLE -LB $SAMPLE -PL Illumina -PU $SAMPLE -SM $SAMPLE
-    samtools index ${SAMPLE}.rg.bam ${SAMPLE}.rg.bam.bai
-    echo "### BAM Read Group Replacement - END: $(date) ###"
-fi
+echo "### BAM Read Group Replacement - START: $(date) ###"
+gatk --java-options "-XX:+UseParallelGC -XX:ParallelGCThreads=4 -Xmx63g" AddOrReplaceReadGroups \
+    -I ${SAMPLE}.bam -O ${SAMPLE}.rg.bam --VALIDATION_STRINGENCY LENIENT \
+    -ID $SAMPLE -LB $SAMPLE -PL Illumina -PU $SAMPLE -SM $SAMPLE
+samtools index ${SAMPLE}.rg.bam ${SAMPLE}.rg.bam.bai
+echo "### BAM Read Group Replacement - END: $(date) ###"
 
 
-if [ $DUP_MARK_AGAIN -eq 0 ] && [ $RNA -eq 0 ]; then
-    echo "### Base Quality Score Recalibration (BQSR) - START: $(date) ###"
-    gatk --java-options "-XX:+UseParallelGC -XX:ParallelGCThreads=4 -Xmx63g" BaseRecalibrator \
-        -R $REF_FASTA -I ${SAMPLE}.rg.bam --use-original-qualities \
-        -O ${SAMPLE}.bqsr --known-sites $(echo ${KNOWN_SITES_VCFS[@]} | sed 's/ / --known-sites /g')
-    echo "Computed recalibration"
-    gatk --java-options "-XX:+UseParallelGC -XX:ParallelGCThreads=4 -Xmx63g" ApplyBQSR \
-        -O ${SAMPLE}.bqsr.bam --create-output-bam-md5 --add-output-sam-program-record \
-        -R $REF_FASTA -I ${SAMPLE}.rg.bam --use-original-qualities --bqsr ${SAMPLE}.bqsr \
-        --static-quantized-quals 10 --static-quantized-quals 20 --static-quantized-quals 30
-    echo "Applied recalibration"
-    echo "### Base Quality Score Recaligbration (BQSR) - END: $(date) ###"
-fi
-
-
-if [ $MAPQ_MIN -ne 0 ] && [ $RNA -eq 0 ]; then
-    echo "### Removing alignments with MAPQ value below $MAPQ_MIN - START: $(date) ###"
-    mv ${SAMPLE}.bqsr.bam ${SAMPLE}.bqsr.all_mapqs.bam
-    samtools view -h -b -q $MAPQ_MIN ${SAMPLE}.bqsr.all_mapqs.bam > ${SAMPLE}.bqsr.bam
-    echo "### Removing alignments with MAPQ value below $MAPQ_MIN - END: $(date) ###"
-fi
-
-
+echo "### Base Quality Score Recalibration (BQSR) - START: $(date) ###"
+gatk --java-options "-XX:+UseParallelGC -XX:ParallelGCThreads=4 -Xmx63g" BaseRecalibrator \
+    -R $REF_FASTA -I ${SAMPLE}.rg.bam --use-original-qualities \
+    -O ${SAMPLE}.bqsr --known-sites $(echo ${KNOWN_SITES_VCFS[@]} | sed 's/ / --known-sites /g')
+echo "Computed recalibration"
+gatk --java-options "-XX:+UseParallelGC -XX:ParallelGCThreads=4 -Xmx63g" ApplyBQSR \
+    -O ${SAMPLE}.bqsr.bam --create-output-bam-md5 --add-output-sam-program-record \
+    -R $REF_FASTA -I ${SAMPLE}.rg.bam --use-original-qualities --bqsr ${SAMPLE}.bqsr \
+    --static-quantized-quals 10 --static-quantized-quals 20 --static-quantized-quals 30
+echo "Applied recalibration"
 mv ${SAMPLE}.rg.bam ${SAMPLE}${BAM_SUFFIX}
-
-# ml python/3.6.1
-# export PYTHONPATH=/home/groups/cgawad/python_libs/lib/python3.6/site-packages:$PYTHONPATH
-# export PATH=/home/groups/cgawad/python_libs/bin:$PATH
-# 
-# htseq-count -m intersection-nonempty -i gene_id -r pos -s no ${SAMPLE}${BAM_SUFFIX} /oak/stanford/groups/cgawad/Reference_Files/GATK_Resource_Bundle_hg38/gencode.v39.annotation.gtf
-# htseq-count -m intersection-nonempty -i gene_id -r pos -s no ${SAMPLE}${BAM_SUFFIX} /oak/stanford/groups/cgawad/Reference_Files/GATK_Resource_Bundle_hg38/gencode.v39.annotation.gff3
-# 
-# if [ $DUPLICATE_PIXEL_DISTANCE -eq 0 ]; then
-#     mv ${SAMPLE}.bqsr.bam ${SAMPLE}${BAM_SUFFIX}
-# else
-#     if [ $REMOVE_DUPS -eq 1 ]; then
-#         REMOVE_DUPS="true"
-#     else
-#         REMOVE_DUPS="false"
-#     fi
-#     echo "### Marking Duplicates - START: $(date) ###"
-#     # For OPTICAL_DUPLICATE_PIXEL_DISTANCE, 2500 is appropriate for patterned flow cells (e.g. NovaSeq, HiSeq). A value of 100 should be used for unpatterned flowcells (e.g. NextSeq, MiniSeq)
-#     gatk --java-options "-XX:+UseParallelGC -XX:ParallelGCThreads=4 -Xmx63g" MarkDuplicates \
-#         -I ${SAMPLE}.bqsr.bam -O ${SAMPLE}${BAM_SUFFIX} --METRICS_FILE ${SAMPLE}.duplication_metrics.tsv \
-#         --VALIDATION_STRINGENCY SILENT --OPTICAL_DUPLICATE_PIXEL_DISTANCE $DUPLICATE_PIXEL_DISTANCE \
-#         --ASSUME_SORT_ORDER coordinate --CLEAR_DT false --MAX_RECORDS_IN_RAM 1000 --ADD_PG_TAG_TO_READS false \
-#         --REMOVE_DUPLICATES $REMOVE_DUPS
-#     if [ ! -f ${SAMPLE}${BAM_SUFFIX} ]; then
-#         echo "${SAMPLE}${BAM_SUFFIX} not found. Exiting with code 1"
-#         exit 1
-#     fi
-#     echo "### Marking Duplicates - END: $(date) ###"
-# fi
+echo "### Base Quality Score Recaligbration (BQSR) - END: $(date) ###"
 
 
 echo "### Indexing final BAM - START: $(date) ###"
@@ -180,9 +121,10 @@ if [ $TOTAL_READS -ge 5000000 ] && [ ! -z $FRACTION ]; then
     echo "5 million read coverage done"
 
     samtools view -b -L $N25CHR_BED ${SAMPLE}${BAM_5M_SUFFIX} > ${SAMPLE}${BAM_5M_SUFFIX}.n25chr.bam
-    $PRESEQ_TOOL_DIR/bam2mr -o ${SAMPLE}${BAM_5M_SUFFIX}.n25chr.mr ${SAMPLE}${BAM_5M_SUFFIX}.n25chr.bam
+    $PRESEQ_TOOL_DIR/bam2mr -o ${SAMPLE}${BAM_5M_SUFFIX}.n25chr.unsorted.mr ${SAMPLE}${BAM_5M_SUFFIX}.n25chr.bam
+    sort -k1,1 -k2,2n -k3,3n ${SAMPLE}${BAM_5M_SUFFIX}.n25chr.unsorted.mr > ${SAMPLE}${BAM_5M_SUFFIX}.n25chr.mr
     $PRESEQ_TOOL_DIR/preseq gc_extrap -o ${SAMPLE}.gc_extrap.future_coverage_5M.tsv ${SAMPLE}${BAM_5M_SUFFIX}.n25chr.mr
-    rm ${SAMPLE}${BAM_5M_SUFFIX}.n25chr.bam* ${SAMPLE}${BAM_5M_SUFFIX}.n25chr.mr
+    rm ${SAMPLE}${BAM_5M_SUFFIX}.n25chr.bam* ${SAMPLE}${BAM_5M_SUFFIX}.n25chr.unsorted.mr ${SAMPLE}${BAM_5M_SUFFIX}.n25chr.mr
     if [ ! -f ${SAMPLE}.gc_extrap.future_coverage_5M.tsv ]; then
         echo "PreSeq for 5M encountered a problem and did not complete"
     else
@@ -195,8 +137,9 @@ fi
 if [ $TOTAL_READS -le 200000000 ]; then
     samtools view -b -L $N25CHR_BED ${SAMPLE}${BAM_SUFFIX} > ${SAMPLE}.bqsr.marked.n25chr.bam
     $PRESEQ_TOOL_DIR/bam2mr -o ${SAMPLE}.bqsr.marked.n25chr.mr ${SAMPLE}.bqsr.marked.n25chr.bam
+    sort -k1,1 -k2,2n -k3,3n ${SAMPLE}${BAM_5M_SUFFIX}.n25chr.unsorted.mr > ${SAMPLE}${BAM_5M_SUFFIX}.n25chr.mr
     $PRESEQ_TOOL_DIR/preseq gc_extrap -o ${SAMPLE}.gc_extrap.future_coverage.tsv ${SAMPLE}.bqsr.marked.n25chr.mr
-    rm ${SAMPLE}.bqsr.marked.n25chr.mr
+    rm ${SAMPLE}.bqsr.marked.n25chr.unsorted.mr ${SAMPLE}.bqsr.marked.n25chr.mr
     if [ ! -f ${SAMPLE}.gc_extrap.future_coverage.tsv ]; then
         echo "PreSeq encountered a problem and did not complete"
     else
@@ -228,7 +171,6 @@ rm -r ${SAMPLE}_temp_qualimap_output
 echo "### Calculating QC metrics ### - END: $(date)"
 
 
-echo -e "END: $(date)\nRuntime: $(($(date +%s)-$START_TIME)) seconds"
 if [ ! -f ${SAMPLE}${BAM_SUFFIX} ]; then
     echo "Final file ${SAMPLE}${BAM_SUFFIX} not found. Exiting with code 1"
     exit 1
@@ -236,3 +178,4 @@ fi
 rm -r split_aligning_${SAMPLE}
 rm ${SAMPLE}.bam* ${SAMPLE}.rg.bam* ${SAMPLE}.bqsr ${SAMPLE}.bqsr.bai ${SAMPLE}.bqsr.bam*
 rm ${SAMPLE}.bqsr.marked.n25chr.bam* ${SAMPLE}.bqsr.marked.n25chr.bed
+echo -e "END: $(date)\nRuntime: $(($(date +%s)-$START_TIME)) seconds"

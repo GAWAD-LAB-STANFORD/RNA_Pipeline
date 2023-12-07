@@ -1,8 +1,8 @@
 #!/bin/bash
 #
 #SBATCH --job-name=submit_all
-#SBATCH --cpus-per-task=1
-#SBATCH --nodes=1
+#SBATCH --mem=32G
+#SBATCH --cpus-per-task=2
 #SBATCH --time=5:00:00
 #SBATCH --partition=cgawad
 
@@ -209,7 +209,7 @@ fi
 
 TEMP_PIPELINE_DIR="$( cd "$( dirname "$0" )" && pwd )"
 PIPELINE_STATUS=${STD_ERR_OUT_DIR}/${PROJECT}_pipeline_status.txt
-cd $RESULTS_DIR
+cd $SCRATCH_DIR
 if [ "$TEMP_PIPELINE_DIR" = "$PIPELINE_DIR" ]; then
     echo -e "\nSTART: $(date)\nRNA Pipeline\n\n$PIPELINE_COMMAND\n\nProject: $PROJECT\nResults dir: $RESULTS_DIR\nFastq dir: $FASTQ_DIR\nScratch dir: $SCRATCH_DIR\nErr out dir: $STD_ERR_OUT_DIR" >> $PIPELINE_STATUS
     if [ $SKIP_SCRATCH -eq 0 ]; then
@@ -296,11 +296,11 @@ elif ([ $STEP -eq 0 ] && [ -z $RUN_DIR ]) || [ $STEP -eq 1 ]; then
     TEMP_SAMPLES_STRING=$( IFS=$':'; echo "${TEMP_SAMPLE_ARRAY[*]}" )
     echo -e "\nsbatch --parsable -e $STD_ERR_OUT_DIR/%A_%a_%x.err -o $STD_ERR_OUT_DIR/%A_%a_%x.out \
         --array=1-${TEMP_JOB_COUNT} ${SCRIPT_DIR}/1_split_fastqs.sh \
-        $FASTQ_DIR $RESULTS_DIR $R1_SUFFIX $R2_SUFFIX $PYTHON_LIBS $PYTHON_LIBS_SITE_PACKAGES \
+        $FASTQ_DIR $SCRATCH_DIR $R1_SUFFIX $R2_SUFFIX $PYTHON_LIBS $PYTHON_LIBS_SITE_PACKAGES \
         $READS_PER_SPLIT $TEMP_SAMPLES_STRING\n" >> $PIPELINE_STATUS
     DEPENDENCIES+=( $(sbatch --parsable -e $STD_ERR_OUT_DIR/%A_%a_%x.err -o $STD_ERR_OUT_DIR/%A_%a_%x.out \
         --array=1-${TEMP_JOB_COUNT} ${SCRIPT_DIR}/1_split_fastqs.sh \
-        $FASTQ_DIR $RESULTS_DIR $R1_SUFFIX $R2_SUFFIX $PYTHON_LIBS $PYTHON_LIBS_SITE_PACKAGES \
+        $FASTQ_DIR $SCRATCH_DIR $R1_SUFFIX $R2_SUFFIX $PYTHON_LIBS $PYTHON_LIBS_SITE_PACKAGES \
         $READS_PER_SPLIT $TEMP_SAMPLES_STRING) )
     TEMP_ARRAY_START=$(($TEMP_ARRAY_START + $TEMP_ARRAY_INCREMENT))
     
@@ -354,10 +354,10 @@ elif [ $STEP -eq 2 ]; then
     TEMP_FASTQ_STRING=$( IFS=$':'; echo "${TEMP_FASTQ_ARRAY[*]}" )
     echo -e "\nsbatch --mem=64G --parsable -e $STD_ERR_OUT_DIR/%A_%a_%x.err -o $STD_ERR_OUT_DIR/%A_%a_%x.out \
         --array=1-${TEMP_JOB_COUNT} ${SCRIPT_DIR}/2_align_reads.sh \
-        $RESULTS_DIR $REF_FASTA $TOOLS_DIR $TEMP_FASTQ_STRING\n" >> $PIPELINE_STATUS
+        $SCRATCH_DIR $REF_FASTA $TOOLS_DIR $TEMP_FASTQ_STRING\n" >> $PIPELINE_STATUS
     DEPENDENCIES+=( $(sbatch --mem=64G --parsable -e $STD_ERR_OUT_DIR/%A_%a_%x.err -o $STD_ERR_OUT_DIR/%A_%a_%x.out \
         --array=1-${TEMP_JOB_COUNT} ${SCRIPT_DIR}/2_align_reads.sh \
-        $RESULTS_DIR $REF_FASTA $TOOLS_DIR $TEMP_FASTQ_STRING) )
+        $SCRATCH_DIR $REF_FASTA $TOOLS_DIR $TEMP_FASTQ_STRING) )
     TEMP_ARRAY_START=$(($TEMP_ARRAY_START + $TEMP_ARRAY_INCREMENT))
     echo "New start: $TEMP_ARRAY_START"
     echo "Increment: $TEMP_ARRAY_INCREMENT"
@@ -410,12 +410,12 @@ elif [ $STEP -eq 3 ]; then
     
     echo -e "\nsbatch --parsable -e $STD_ERR_OUT_DIR/%A_%a_%x.err -o $STD_ERR_OUT_DIR/%A_%a_%x.out \
         --array=1-${TEMP_JOB_COUNT} ${SCRIPT_DIR}/3_process_sample.sh \
-        $RESULTS_DIR $GENOME_VERSION$SCRIPT_DIR $TOOLS_DIR $REFERENCE_DIR $TEMP_SAMPLES_STRING $DUP_MARK_AGAIN \
-        $DUPLICATE_PIXEL_DISTANCE $REMOVE_DUPS $BAM_SUFFIX $INTERVAL_LIST $VARIANT_CLASS\n" >> $PIPELINE_STATUS
+        $SCRATCH_DIR $SCRIPT_DIR $TOOLS_DIR $REFERENCE_DIR $TEMP_SAMPLES_STRING \
+        $BAM_SUFFIX $INTERVAL_LIST $VARIANT_CLASS\n" >> $PIPELINE_STATUS
     DEPENDENCIES+=( $(sbatch --parsable -e $STD_ERR_OUT_DIR/%A_%a_%x.err -o $STD_ERR_OUT_DIR/%A_%a_%x.out \
         --array=1-${TEMP_JOB_COUNT} ${SCRIPT_DIR}/3_process_sample.sh \
-        $RESULTS_DIR $GENOME_VERSION$SCRIPT_DIR $TOOLS_DIR $REFERENCE_DIR $TEMP_SAMPLES_STRING $DUP_MARK_AGAIN \
-        $DUPLICATE_PIXEL_DISTANCE $REMOVE_DUPS $BAM_SUFFIX $INTERVAL_LIST $VARIANT_CLASS) )
+        $SCRATCH_DIR $SCRIPT_DIR $TOOLS_DIR $REFERENCE_DIR $TEMP_SAMPLES_STRING \
+        $BAM_SUFFIX $INTERVAL_LIST $VARIANT_CLASS) )
     TEMP_ARRAY_START=$(($TEMP_ARRAY_START + $TEMP_ARRAY_INCREMENT))
     
     if [ $TEMP_ARRAY_START -le ${#SAMPLE_ARRAY[@]} ]; then
@@ -466,21 +466,14 @@ elif [ $STEP -eq 4 ] then
     fi
     echo "### Processing aligned fastqs into bams ### - END: $(date)" >> $PIPELINE_STATUS
     mkdir -p ${PROJECT}_Multiple_Metric_Files
-    echo -e "\nsbatch -e $STD_ERR_OUT_DIR/%A_%x.err -o $STD_ERR_OUT_DIR/%A_%x.out \
-        ${SCRIPT_DIR}/summarize_metrics.sh $RESULTS_DIR $SCRIPT_DIR $PROJECT $RUN_DIR $SAMPLE_SHEET\n" >> $PIPELINE_STATUS
-    sbatch -e $STD_ERR_OUT_DIR/%A_%x.err -o $STD_ERR_OUT_DIR/%A_%x.out \
-        ${SCRIPT_DIR}/summarize_metrics.sh $RESULTS_DIR $SCRIPT_DIR $PROJECT $RUN_DIR $SAMPLE_SHEET
-    echo "Submitted asynchronous summarize metrics job" >> $PIPELINE_STATUS
-fi
-
-
-if [ $STEP -eq 4 ]; then
-    SAMPLE_ARRAY=( $(ls *${BAM_SUFFIX} | sed "s/${BAM_SUFFIX}//") )
-    if [ ${#SAMPLE_ARRAY[@]} -eq 0 ]; then
-        echo "No BAM files found in the results directory. Exiting with code 1"
-        echo "No BAM files found in the results directory. Exiting with code 1" >> $PIPELINE_STATUS
-        echo "END: $(date)" >> $PIPELINE_STATUS
-        exit 1
+    ml R/4.2.0 biology samtools
+    export R_LIBS="/home/groups/cgawad/R_LIBS"
+    bash ${SCRIPT_DIR}/summarize_metrics.sh $PIPELINE_STATUS $SCRIPT_DIR $PROJECT $RUN_DIR $SAMPLE_SHEET
+    
+    if [ "$SCRATCH_DIR" != "$RESULTS_DIR" ]; then
+        echo "### Moving results from scratch dir to results dir ### - START: $(date)"
+        rsync -ar $SCRATCH_DIR/ $RESULTS_DIR/
+        echo "### Moving results from scratch dir to results dir ### - END: $(date)"
     fi
-    echo "END: $(date)"
+    echo "END: $(date)" >> $PIPELINE_STATUS
 fi

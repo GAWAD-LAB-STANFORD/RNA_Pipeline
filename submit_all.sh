@@ -7,6 +7,7 @@
 #SBATCH --partition=cgawad
 
 PIPELINE_DIR="$( cd "$( dirname "$0" )" && pwd )"
+PIPELINE_COMMAND="$@"
 HELP="\
 Purpose: \n\t\
     To construct BAMs from RNA data from Whole Genome Sequencing pair-end fastq.gz files \n\n\

@@ -46,6 +46,7 @@ Run with demultiplexing, fastq directory, and results directory: \n\t\
 For more information, read the README.md"
 
 # Reads in command line option arguments and assigns them to variables
+SKIP_SCRATCH=0
 VARIANT_CLASS=1
 BAM_SUFFIX=".rna.bam"
 TARGETED=0

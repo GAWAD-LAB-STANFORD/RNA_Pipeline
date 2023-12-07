@@ -28,18 +28,16 @@
         - If you do not specify a fastq directory, the program will assume the fastq.gz files are in the results directory you specified, and will end the program if no fastq.gz files are found
         - If you do not specify a results directory, the program will make a new folder with the current date in the name within the fastq directory 
     - Specify the project name for the final resulting VCF that will be made using *-p* or *--project*
-- Optional arguments: -b/--run_dir >arg<, -s/--sample_sheet >arg<, --R1_suffix >arg<, --R2_suffix >arg<, -o/--err_out_dir >arg<, --b37, --novaseq_wgs, --dup_mark_again, --skip_dup_mark, --remove_dups, --dup_pixel_distance >arg<, --no_variant_class, --bam_suffix >arg<, --slurm
-    - If you want to have the script demultiplx your BCL files into fastq.gz files, add the option *-b* or *--run_dir* followed by the full path to your directory with the BCL files. The program will look for a sample sheet called SampleSheet.csv in the first level within the run_dir or you can specify a different sample sheet by adding the option *--sample_sheet* followed by the full path to that file. The program will make the fastq directory if it does not exist and tell you the sizes of undeteremined vs fully demultiplexed reads
-    - If your read 1 and read 2 fastq.gz files differentiate themselves by some pattern other than _L001_R1_001.fastq.gz and _L001_R2_001.fastq.gz or _R1_001.fastq.gz and _R2_001.fastq.gz, add the option *--R1_suffix* followed by the R1 suffix and add the option *--R2_suffix* followed by the R2 suffix
-    - If you want to specify a different directory to output the standard error and out print statements of all jobs, add the option *--err_out_dir* followed by your preferred directory
-    - If you want to switch the reference genome version to the hg19 subtype b37, add the option *--b37*
-    - If you are running a Novaseq WGS run, add the option *--novaseq_wgs* to increase the memory allotted to certain jobs to ensure they run without errors
-    - If the pipeline failed because MarkDuplicates ran out of memory, run again and add the option *--dup_mark_again*
-    - If you want to skip duplicate marking, add the option *--skip_dup_mark*
-    - If you want to remove duplicates instead of just marking them, add the option *--remove_dups*
-    - If you want to analyze data from a patterned flow cell (e.g. NovaSeq, HiSeq) instead of an unpattered flow cell (e.g. NextSeq, MiniSeq) then it's recommended to change the optical duplicate pixel distance from the default of 100 to 2500 by adding the option *--dup_pixel_distance* followed by 2500 or your preferred optical duplicate pixel distance
+- Optional arguments: -s/--scratch_dir >arg<, --err_out_dir >arg<, --skip_scratch, -b/--run_dir >arg<, --sample_sheet >arg<, --R1_suffix >arg<, --R2_suffix >arg<, --skip_trimming, --no_variant_class, --bam_suffix >arg<, --exome, --panel_bed >arg<, --panel_interval_list >arg<, --slurm >arg<
+    - You can specify a directory to perform all intermediate steps in with *-s* or *--scratch_dir*
+    - You can specify a directory to output the standard error and out print statements of all jobs to using *--err_out_dir*
+    - If you want to skip having the pipeline run intermediate steps in scratch, use *--skip_scratch*
+    - You can have the script demultiplex your BCL files into fastq.gz files by specifying a run folder using *-b* or *--run_dir*. The program will look for a sample sheet called SampleSheet.csv in the first level within the run_dir or you can specify a different sample sheet with *--sample_sheet*. The program will make the fastq directory if it does not exist and tell you the sizes of undeteremined vs fully demultiplexed reads
+    - If you don't want trimmomatic to run, add the *--skip_trimming* option
     - If you want to skip the slow summing of variant classes that gets performed by default using samtools pileup and bcftools then add the option *--no_variant_class*
     - If your BAMs do not end in ".bqsr.marked.bam" then specify their suffix with the option *--bam_suffix* followed by your BAM suffix
+    - If your data is whole exome sequencing instead of the default assumption of whole genome sequencing, add the option *--exome*
+    - If you want to further restrict the analysis to a smaller subset of genes than whole exome sequencing, you need to provide a bed file and interval list file using *--panel_bed* and *--panel_interval_list*
     - Besides the already implemented job name and standard error and output print statements, you can specify additional slurm commands for the pipeline job following the use of the option *--slurm*. If you use this option, **make sure it is the last one you use**
         - A useful example would be setting a future time to run the job and asking for email notifications like so:
 

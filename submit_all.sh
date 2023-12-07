@@ -60,21 +60,6 @@ while [ "$1" != "" ]; do
         -h | --help )           echo -e $HELP
                                 exit 0
                                 ;;
-        -b | --run_dir )        shift
-                                RUN_DIR=$1
-                                ;;
-        --sample_sheet )        shift
-                                SAMPLE_SHEET=$1
-                                ;;
-        --R1_suffix )           shift
-                                R1_SUFFIX=$1
-                                ;;
-        --R2_suffix )           shift
-                                R2_SUFFIX=$1
-                                ;;
-        --err_out_dir )         shift
-                                STD_ERR_OUT_DIR=$1
-                                ;;
         -f | --fastq_dir )      shift
                                 FASTQ_DIR=$1
                                 ;;
@@ -86,6 +71,26 @@ while [ "$1" != "" ]; do
                                 ;;
         -d | --pipeline_dir )   shift
                                 PIPELINE_DIR=$1
+                                ;;
+        -s | --scratch_dir )    shift
+                                SCRATCH_DIR=$1
+                                ;;
+        --err_out_dir )         shift
+                                STD_ERR_OUT_DIR=$1
+                                ;;
+        --skip_scratch )        SKIP_SCRATCH=1
+                                ;;
+        -b | --run_dir )        shift
+                                RUN_DIR=$1
+                                ;;
+        --sample_sheet )        shift
+                                SAMPLE_SHEET=$1
+                                ;;
+        --R1_suffix )           shift
+                                R1_SUFFIX=$1
+                                ;;
+        --R2_suffix )           shift
+                                R2_SUFFIX=$1
                                 ;;
         --no_variant_class )    VARIANT_CLASS=0
                                 ;;
@@ -434,7 +439,7 @@ elif [ $STEP -eq 3 ]; then
             -e ${STD_ERR_OUT_DIR}/%A_submit_all_%x.err -o ${STD_ERR_OUT_DIR}/%A_submit_all_%x.out \
             ${PIPELINE_DIR}/submit_all.sh --step4 --previous_check ${OPTIONS[@]}
     fi
-elif [ $STEP -eq 4 ] then
+elif [ $STEP -eq 4 ]; then
     SAMPLE_COUNT=1
     MISSING_COUNT=0
     MISSING_INDICES=""

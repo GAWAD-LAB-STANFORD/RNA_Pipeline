@@ -14,7 +14,7 @@ R2_SUFFIX=$4
 PYTHON_LIBS=$5
 PYTHON_LIBS_SITE_PACKAGES=$6
 READS_PER_SPLIT=$7
-SAMPLE_ARRAY=( $(echo ${8} | sed 's/:/ /g') )
+SAMPLE_ARRAY=( $(echo $8 | sed 's/:/ /g') )
 SAMPLE=${SAMPLE_ARRAY[$(( $SLURM_ARRAY_TASK_ID - 1 ))]}
 
 echo -e "START: $(date)\nRNA Pipeline\nFastq dir: $FASTQ_DIR\nScratch dir: $SCRATCH_DIR"

@@ -257,7 +257,7 @@ if [ ! -z $SLURM_OPTIONS ]; then
 fi
 
 
-if ([ $STEP -eq 0 ] && [ -z $RUN_DIR ]) || [ $STEP -eq 1 ] || [ $STEP -eq 2 ]; then
+if ([ $STEP -eq 0 ] && [ -z $RUN_DIR ]) || [ $STEP -ne 0 ]; then
     if [ -z $R1_SUFFIX ] || [ -z $R2_SUFFIX ]; then
         R1_SUFFIX="_L001_R1_001.fastq.gz"
         R2_SUFFIX="_L001_R2_001.fastq.gz"

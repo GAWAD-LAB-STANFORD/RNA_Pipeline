@@ -19,13 +19,6 @@ Optional arguments: -s/--scratch_dir <arg>, --err_out_dir <arg>, --skip_scratch,
 Defaults: \n\t\
     If no fastq_dir specified, uses results_dir \n\t\
     If no results_dir specified, makes new directory in fastq_dir \n\t\
-    sample_sheet: SampleSheet.csv \n\t\
-    R1_suffix: _L001_R1_001.fastq.gz or _R1_001.fastq.gz \n\t\
-    R2_suffix: _L001_R2_001.fastq.gz or _R1_001.fastq.gz \n\t\
-        
-Defaults: \n\t\
-    If no fastq_dir specified, uses results_dir \n\t\
-    If no results_dir specified, makes new directory in fastq_dir \n\t\
     scratch_dir: /scratch/groups/cgawad/date_project_Scratch \n\t\
     sample_sheet: SampleSheet.csv \n\t\
     R1_suffix: _L001_R1_001.fastq.gz or _R1_001.fastq.gz or _R1.fastq.gz \n\t\

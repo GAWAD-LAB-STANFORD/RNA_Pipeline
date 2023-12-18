@@ -105,6 +105,8 @@ while [ "$1" != "" ]; do
                                 ;;
         --step3 )               STEP=3
                                 ;;
+        --step4 )               STEP=4
+                                ;;
         --temp_array_start )    shift
                                 TEMP_ARRAY_START=$1
                                 ;;
@@ -430,10 +432,10 @@ elif [ $STEP -eq 3 ]; then
     else
         echo -e "\nsbatch --dependency=afterany:$( IFS=$':'; echo "${DEPENDENCIES[*]}" ) -J $PROJECT \
             -e ${STD_ERR_OUT_DIR}/%A_submit_all_%x.err -o ${STD_ERR_OUT_DIR}/%A_submit_all_%x.out \
-            ${PIPELINE_DIR}/submit_all.sh --step4 --previous_check ${OPTIONS[@]}\n" >> $PIPELINE_STATUS
+            ${PIPELINE_DIR}/submit_all.sh --step4 ${OPTIONS[@]}\n" >> $PIPELINE_STATUS
         sbatch --dependency=afterany:$( IFS=$':'; echo "${DEPENDENCIES[*]}" ) -J $PROJECT \
             -e ${STD_ERR_OUT_DIR}/%A_submit_all_%x.err -o ${STD_ERR_OUT_DIR}/%A_submit_all_%x.out \
-            ${PIPELINE_DIR}/submit_all.sh --step4 --previous_check ${OPTIONS[@]}
+            ${PIPELINE_DIR}/submit_all.sh --step4 ${OPTIONS[@]}
     fi
 elif [ $STEP -eq 4 ]; then
     SAMPLE_COUNT=1

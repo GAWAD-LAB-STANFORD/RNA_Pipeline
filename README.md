@@ -29,10 +29,10 @@
         - If you do not specify a results directory, the program will make a new folder with the current date in the name within the fastq directory 
     - Specify the project name for the final resulting VCF that will be made using *-p* or *--project*
 - Optional arguments: -s/--scratch_dir >arg<, --err_out_dir >arg<, --skip_scratch, -b/--run_dir >arg<, --sample_sheet >arg<, --R1_suffix >arg<, --R2_suffix >arg<, --skip_trimming, --no_variant_class, --bam_suffix >arg<, --exome, --panel_bed >arg<, --panel_interval_list >arg<, --slurm >arg<
-    - You can specify a directory to perform all intermediate steps in with *-s* or *--scratch_dir*
-    - You can specify a directory to output the standard error and out print statements of all jobs to using *--err_out_dir*
+    - If you want to specify a directory to perform all intermediate steps in, specify with *-s* or *--scratch_dir*
+    - If you want to specify a directory to output the standard error and out print statements of all jobs to, specify with *--err_out_dir*
     - If you want to skip having the pipeline run intermediate steps in scratch, use *--skip_scratch*
-    - You can have the script demultiplex your BCL files into fastq.gz files by specifying a run folder using *-b* or *--run_dir*. The program will look for a sample sheet called SampleSheet.csv in the first level within the run_dir or you can specify a different sample sheet with *--sample_sheet*. The program will make the fastq directory if it does not exist and tell you the sizes of undeteremined vs fully demultiplexed reads
+    - If you want the script to demultiplex your BCL files into fastq.gz files, specify the run folder with *-b* or *--run_dir*. The program will look for a sample sheet called SampleSheet.csv in the first level within the run_dir or you can specify a different sample sheet with *--sample_sheet*. The program will make the fastq directory if it does not exist and tell you the sizes of undeteremined vs fully demultiplexed reads
     - If you don't want trimmomatic to run, add the *--skip_trimming* option
     - If you want to skip the slow summing of variant classes that gets performed by default using samtools pileup and bcftools then add the option *--no_variant_class*
     - If your BAMs do not end in ".bqsr.marked.bam" then specify their suffix with the option *--bam_suffix* followed by your BAM suffix
